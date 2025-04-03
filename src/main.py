@@ -1,4 +1,5 @@
 # git push -u origin main
+# git ls-files | xargs wc -l
 # uvicorn src.main:app --reload
 
 from fastapi import FastAPI
@@ -14,9 +15,6 @@ from src.core.models.users import UserModel
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with db_helper.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        logger.debug('Metadata was created successfully')
 
     yield
     

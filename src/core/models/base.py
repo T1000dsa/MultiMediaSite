@@ -13,8 +13,8 @@ class Base(DeclarativeBase):
     #@declared_attr.directive
     #def __tablename__(cls):
     #    return cls.__name__.lower()
+    pass
 
-    id:Mapped[int] = mapped_column(primary_key=True)
 
 int_pk = Annotated[int, mapped_column(primary_key=True)]
 created_at = Annotated[datetime, mapped_column(server_default=func.now())]

@@ -54,6 +54,17 @@ test = ["anyio[trio]", "blockbuster (>=1.5.23)", "coverage[toml] (>=7)", "except
 trio = ["trio (>=0.26.1)"]
 
 [[package]]
+name = "async"
+version = "0.6.2"
+description = "Async Framework"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "async-0.6.2.tar.gz", hash = "sha256:ac6894d876e45878faae493b0cf61d0e28ec417334448ac0a6ea2229d8343051"},
+]
+
+[[package]]
 name = "asyncpg"
 version = "0.30.0"
 description = "An asyncio PostgreSQL driver"
@@ -880,4 +891,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "15ff324ce8d6aac17cfeea8eb39cb3f68b3fa478e016eaf28b5bcbfbcc47a9cd"
+content-hash = "4cddd16fee76f6281601f5d1ca7d7d406eb16338decc419f6c186b970dbddac4"

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 import logging
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from src.core.config import settings
 from src.core.schemas.users import UserRead, UserBase
@@ -18,11 +20,19 @@ async def create_user_endpoint(
     user_schema:UserBase,
     session:Annotated[AsyncSession, Depends(db_helper.session_getter)]
     ):
-    result = await create_user(
-        session=session, 
-        user_create=user_schema
-        )
-    return {'res':result}
+        try:
+            result = await create_user(
+                session=session, 
+                user_create=user_schema
+            )
+            await session.commit()
+
+            return {'res': result}
+        
+        except HTTPException as err:
+            logger.debug(err)
+            return {'exc':err}
+
     
 
 @router.get('/receive_users')
@@ -30,15 +40,15 @@ async def receive_users_endpoint(
     session:Annotated[AsyncSession, Depends(db_helper.session_getter)]
     ):
     result = await give_all_users(session=session)
-    return {'res':result}
+    return {'res':result, 'status_code':200}
     
 
-@router.get('/receive_user')
+@router.get('/receive_user/{user_id}')
 async def receive_user_endpoint(
-    user_schema:UserRead,
+    user_id:int,
     session:Annotated[AsyncSession, Depends(db_helper.session_getter)]
     ):
     result = await give_one_user(
         session=session, 
-        user_read=user_schema)
+        user_id=user_id)
     return {'res':result}

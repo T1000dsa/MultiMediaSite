@@ -21,9 +21,9 @@ class UserModel(Base):
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
     
-    def set_password(self, password: str):
+    def set_password(self):
         """Securely hash and store password"""
-        self.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode()
+        self.password = bcrypt.hashpw(self.password.encode('utf-8'), bcrypt.gensalt()).decode()
 
     def check_password(self, plaintext_password: str) -> bool:
         """Verify password with automatic format correction"""
