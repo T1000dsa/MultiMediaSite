@@ -1,8 +1,11 @@
-from src.core.models.base import Base, int_pk, created_at, updated_at
+from core.services.database.models.base import Base, int_pk, created_at, updated_at
 from sqlalchemy.orm import Mapped, mapped_column
-import bcrypt
-from src.core.config import logger
 from typing import Optional
+import bcrypt
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 class UserModel(Base):
     __tablename__ = 'users'
