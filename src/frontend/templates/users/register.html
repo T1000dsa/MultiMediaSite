@@ -4,19 +4,30 @@
 <div class="registration-form">
     <form action="{{ template_action }}" method="post" enctype="multipart/form-data">
         {{ errors }}<br>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" value="{{ form_data.username }}" required><br><br>
+
+        <!-- Login Field -->
+        <label for="login">Login:</label>
+        <input type="text" id="login" name="login" value="{{ form_data.login }}" required><br><br>
 
         <!-- Password Field -->
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" value="{{ form_data.password }}" required><br><br> 
+        <input type="password" id="password" name="password" value="{{ form_data.password }}" required><br><br>
 
+        <!-- Confirm pass Field -->
         <label for="password">Confirm Password:</label>
         <input type="password" id="password_again" name="password_again" required><br><br>
 
         <!-- Email Field -->
         <label for="mail">Email (optional):</label>
         <input type="text" id="mail" name="mail" value="{{ form_data.mail }}"><br><br>
+
+        <!-- Username pass Field -->
+        <label for="username">Username (optional):</label>
+        <input type="username" id="username" name="username" value="{{ form_data.username }}"><br><br>
+
+        <!-- Bio pass Field -->
+        <label for="bio">Bio (optional):</label>
+        <input type="bio" id="bio" name="bio" value="{{ form_data.bio }}"><br><br>
 
         <button type="submit">Register</button>
     </form>

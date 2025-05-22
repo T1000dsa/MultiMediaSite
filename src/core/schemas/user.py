@@ -2,12 +2,13 @@ from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 
 class UserSchema(BaseModel):
-    username:str
+    login:str
     password:str
     password_again:str
 
-    #public_name:Optional[str] = None
+    username:Optional[str] = None
     email:Optional[str] = None
+    bio:Optional[str] = None
 
     @model_validator(mode="after")
     def check_passwords_match(self):

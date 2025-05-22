@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>{{ title }}</h1>
+{{form_data}}
 <div class="login-form">
     {% if template_action %}
         <form action="{{ template_action }}" method="post" enctype="multipart/form-data">
             {{ error }}<br>
-            <!-- Username Field -->
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" value="{{ form_data.username }}" required><br><br>
+            <!-- login Field -->
+            <label for="login">Login:</label>
+            <input type="text" id="login" name="login" value="{{ form_data.login }}" required><br><br>
 
             <!-- Password Field -->
             <label for="password">Password:</label>

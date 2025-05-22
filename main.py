@@ -10,6 +10,7 @@ from src.core.config.logger import LOG_CONFIG
 from core.dependencies.db_helper import db_helper
 
 from api.v1.endpoints.index import router as index_router
+from api.v1.auth.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(index_router)
 
 if __name__ == '__main__':
