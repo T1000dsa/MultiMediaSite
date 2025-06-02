@@ -16,7 +16,7 @@ class UserModel(Base):
     login: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True) # Login for autorization
     username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default='Anonymous') # Username for public name. Can be none -> Anonymous 
     password: Mapped[str] = mapped_column(String(256), nullable=False)
-    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     bio: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     join_data: Mapped[created_at]
     last_time_login: Mapped[updated_at]

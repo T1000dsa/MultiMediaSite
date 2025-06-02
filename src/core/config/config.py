@@ -50,3 +50,6 @@ class Settings(BaseSettings):
 settings = Settings()
 if settings.mode.mode not in ('DEV', 'TEST'):
     raise Exception('mode should be DEV or TEST')
+
+auth_prefix = '/users'
+main_prefix = settings.prefix.api_data.prefix

@@ -6,150 +6,119 @@ from typing import Optional
 
 import logging
 
-from src.core.config.config import templates, settings
-from src.utils.prepared_response import prepare_template
-from src.core.dependencies.auth_injection import GET_AUTH_SERVICE
-from src.core.schemas.user import UserSchema
+from src.core.config.config import auth_prefix
+from src.core.dependencies.auth_injection import GET_AUTH_SERVICE, GET_CURRENT_USER
+from src.api.v1.utils.render import render_login_form, render_register_form, render_profile_form
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix=settings.prefix.api_data.prefix, tags=['auth'])
+router = APIRouter(prefix=auth_prefix, tags=['auth'])
 
 
 @router.get("/login")
-async def html_login(
-    request:Request,
-    error:str|None = None,
-    form_data:dict|None = {}
-    ):
-
-    prepared_data = {
-        "title":"Sigh In",
-        "template_action":settings.prefix.api_data.prefix+'/login/process',
-        "form_data":form_data,
-        "error":error
-        }
-    
-    add_data = {
-            "request":request
-        }
-    
-    template_response_body_data = await prepare_template(
-        data=prepared_data,
-        additional_data=add_data
-        )
-
-    response = templates.TemplateResponse('users/login.html', template_response_body_data)
-    return response
-
-
-@router.post("/login/process")
-async def login(
+@router.post("/login")
+async def handle_login(
     request: Request,
     auth_service: GET_AUTH_SERVICE,
-    login=Form(...), 
-    password=Form(...)
+    login: str = Form(None),  # Optional for POST
+    password: str = Form(None),  # Optional for POST
+    errors: str = None,  # For error passing
 ):
-    form_data={'login':login, 'password':password}
-    try:
-        session_token = await auth_service.authenticate_user(
-            login=login,
-            password=password
-        )
-        logger.debug(f'{session_token}')
-        
-        if not session_token:
-            return await html_login(request=request, error='Invalid credentials', form_data=form_data)
-        
-        response = RedirectResponse(url='/', status_code=302)
+    # Handle POST request (form submission)
+    if request.method == "POST":
+        form_data = {'login': login, 'password': password}
+        try:
+            session_token = await auth_service.authenticate_user(
+                login=login,
+                password=password
+            )
+            
+            if not session_token:
+                return await render_login_form(
+                    request, 
+                    errors='Invalid credentials', 
+                    form_data=form_data
+                )
+            
+            response = RedirectResponse(url='/', status_code=302)
+            return await auth_service.set_session_cookies(response, session_token)
+            
+        except Exception as err:
+            logger.error(f"Login failed: {err}")
+            return await render_login_form(
+                request, 
+                errors='Login failed', 
+                form_data=form_data
+            )
 
-        logger.debug(f'{response} {session_token.session_token}')
+    # Handle GET request (initial form display)
+    return await render_login_form(request)
 
-        response = await auth_service.set_session_cookies(response, session_token)
-        
-        return response
-        
-    except Exception as err:
-        logger.error(f"Login failed: {err}")
-        return await html_login(request=request, error='Login failed', form_data=form_data)
 
 @router.get("/register")
-async def html_register(
-    request:Request
-):
-    logger.info('inside html_register')
-
-    prepared_data = {
-        "title":"Sigh Up",
-        "template_action":settings.prefix.api_data.prefix+'/register/process',
-        }
-    
-    add_data = {
-            "request":request
-        }
-    
-
-    template_response_body_data = await prepare_template(
-        data=prepared_data,
-        additional_data=add_data
-        )
-    
-    response = templates.TemplateResponse('users/register.html', template_response_body_data)
-    return response
-
-@router.post("/register/process")
-async def register(
-    request:Request,
+@router.post("/register")
+async def handle_register(
+    request: Request,
     auth_service: GET_AUTH_SERVICE,
-    login: str = Form(...),
-    password: str = Form(...),
-    password_again: str = Form(...),
-    username:str = Form(...),
-    mail: str = Form(...),
-    bio: str = Form(...)
-    
+    login: str = Form(None),
+    password: str = Form(None),
+    password_again: str = Form(None),
+    username: str = Form(None),
+    email: str = Form(None),
+    bio: str = Form(None),
+    errors: str = None
 ):
+    # Handle POST request (form submission)
+    if request.method == "POST":
+        logger.info(f'User: {login} tries to register...')
+        
+        try:
+            await auth_service.create_user(
+                login=login,
+                password=password,
+                password_again=password_again,
+                username=username,
+                email=email,
+                bio=bio
+            )
+            
+            # Successful registration - redirect to login
+            return RedirectResponse(url=f"{auth_prefix}/login?registered=true", status_code=303)
+            
+        except IntegrityError as err:
+            logger.info(f'{err}')
+            return await render_register_form(
+                request,
+                errors='Username or email already exists',
+                form_data={
+                    'login': login,
+                    'username': username,
+                    'email': email,
+                    'bio': bio
+                }
+            )
+            
+        except Exception as err:
+            logger.error(f'{err}')
+            return await render_register_form(
+                request,
+                errors='Registration failed. Please try again.',
+                form_data={
+                    'login': login,
+                    'username': username,
+                    'email': email,
+                    'bio': bio
+                }
+            )
 
-    logger.info(f'User: {login} tries to registrate...')
-
-    try:
-        await auth_service.create_user(
-        login=login,
-        password=password,
-        password_again=password_again,
-        username=username,
-        mail=mail,
-        bio=bio)
- 
-    except IntegrityError as err:
-        logger.info(f'{err}') 
-        return "Such user already in database"
-
-    except Exception as err:
-        logger.error(f'{err}')
-        raise err
-    
-    prepared_data = {
-        "title":"Registration success",
-        "content":"Registration was success!"
-        }
-    
-    add_data = {
-            "request":request
-        }
-    
-    logger.info('success registration')
-    template_response_body_data = await prepare_template(
-        data=prepared_data,
-        additional_data=add_data)
-    return templates.TemplateResponse('users/register_success.html', template_response_body_data)
-
+    # Handle GET request (initial form display)
+    return await render_register_form(request, errors=errors)
 
 @router.get('/logout')
 async def logout(
     auth_service: GET_AUTH_SERVICE
 ):
-    response = RedirectResponse(url=router.prefix + "/login", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url=auth_prefix + "/login", status_code=status.HTTP_303_SEE_OTHER)
     
     try:
         response = await auth_service.logout_user(response=response)
@@ -158,3 +127,9 @@ async def logout(
         logger.debug(f"Unexpected error: {e}")
     
     return response
+
+@router.get('/profile')
+async def profile(request:Request, curr_user:GET_CURRENT_USER):
+    if curr_user:
+        return await render_profile_form(request, curr_user)
+    #return HTTPException(detail='Unauthorized', status_code=status.HTTP_401_UNAUTHORIZED)

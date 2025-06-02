@@ -1,13 +1,14 @@
-from src.core.config.config import settings
+from src.core.config.config import auth_prefix
 
 
-prefix = settings.prefix.api_data.prefix
+prefix = auth_prefix
 menu_items = [
     {'title':'Home', 'url':'/'},
     {'title':'Docs', 'url':'/docs'},
     {'title':'Registration',  'url': f'{prefix}/register'},
     {'title':'Login','url':f'{prefix}/login'},
     {'title':'Logout','url':f'{prefix}/logout'},
+    {'title':'Profile','url':f'{prefix}/profile'},
 ]
 
 def get_menu():

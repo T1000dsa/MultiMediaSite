@@ -17,7 +17,7 @@ from api.v1.auth.auth import router as auth_router
 async def lifespan(app: FastAPI):
     dictConfig(LOG_CONFIG)
     logger = logging.getLogger(__name__)
-    logger.info(settings)
+    #logger.info(settings)
     
     yield  # FastAPI handles requests here
 

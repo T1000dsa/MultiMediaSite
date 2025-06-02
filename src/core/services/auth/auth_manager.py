@@ -122,7 +122,7 @@ class AuthService:
             await delete_session(self.session, select_data_check.id)
 
         user = await self.get_user_by_id(select_data_check.user_id)
-        return user.login
+        return user
 
     # Dependency to check for valid session
     async def get_current_user(self, request: Request):
