@@ -1,5 +1,6 @@
 from fastapi import Request, Response, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import RedirectResponse
 from typing import Optional
 from datetime import datetime
 import logging
@@ -22,7 +23,7 @@ from src.core.services.database.orm.session_orm import (
     updata_session,
     delete_session
 )
-from src.core.config.auth_config import EXPIRE_TIME, SESSION_TOKEN
+from src.core.config.auth_config import EXPIRE_TIME, SESSION_TOKEN, credentials_exception
 
 
 logger = logging.getLogger(__name__)
@@ -53,12 +54,6 @@ class AuthService:
     
     async def get_user_by_id(self, user_id:int) -> Optional[UserModel]:
         return await select_data_user_id(self.session, user_id)
-    
-    async def verify_user_tokens(self, request:Request) -> dict:
-        pass
-    
-    async def gather_user_data(self, request:Request) -> dict:
-        pass
 
     async def authenticate_user(self, login: str, password: str) -> Optional[SessionModel]: # Aka login
         logger.debug(f'User {login} tries to authorize...')
@@ -90,11 +85,14 @@ class AuthService:
             logger.error(f'Something unexpectable: {err}')
 
     
-    async def logout_user(self, response:Response) -> Response:
+    async def logout_user(self, request:Request, response:Response) -> Response:
+        user = await self.validate_session(request=request)
+        await self.disable_user(user.id)
         response.delete_cookie("session_token")
         return response
     
     async def set_session_cookies(self, response:Response, cookie:SessionModel) -> Response:
+        logger.debug('new session settle')
         response.set_cookie(
             SESSION_TOKEN,
             cookie.session_token,
@@ -108,8 +106,13 @@ class AuthService:
     async def create_session_db(self, user_id: int) -> int:
         return await create_session(self.session, user_id, EXPIRE_TIME)
     
+    async def is_expired(self, session: SessionModel) -> bool:
+        """Returns True if session is expired, False if still valid"""
+        return datetime.now() > session.expires_at
+        
+   
     # Validate session
-    async def validate_session(self, request:Request) -> Optional[str]:
+    async def validate_session(self, request:Request) -> Optional[UserModel]:
         session_token = request.cookies.get(SESSION_TOKEN)
         select_data_check = await select_session(self.session, session_token)
         if not select_data_check:
@@ -117,12 +120,10 @@ class AuthService:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated"
         )
-        # Check if session has expired
-        if datetime.now() > select_data_check.expires_at:
-            await delete_session(self.session, select_data_check.id)
 
         user = await self.get_user_by_id(select_data_check.user_id)
         return user
+    
 
     # Dependency to check for valid session
     async def get_current_user(self, request: Request):
@@ -139,5 +140,40 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired session"
             )
-        
-        return username
+    async def refresh_logic(self, request: Request) -> Optional[Response]:
+        logger.debug('in refresh logic')
+        try:
+            session_token = request.cookies.get(SESSION_TOKEN)
+            if not session_token:
+                logger.debug('No session token found')
+                return None
+            
+            session = await select_session(self.session, session_token)
+            if not session:
+                logger.debug('No session found in DB')
+                return None
+            
+            # Check if token is expired
+            if not await self.is_expired(session):
+                logger.debug('Token still valid')
+                return None
+                
+            logger.debug('Token expired - refreshing...')
+            user = await self.get_user_by_id(session.user_id)
+            if not user:
+                logger.debug('User not found')
+                return None
+            
+            await delete_session(self.session, session.id)
+            # Create new session
+
+            new_session_id = await self.create_session_db(user.id)
+            new_session = await select_session_by_id(self.session, new_session_id)
+            
+            # Return response with new token
+            response = RedirectResponse(url=str(request.url), status_code=302)
+            return await self.set_session_cookies(response, new_session)
+
+        except Exception as err:
+            logger.error(f"Refresh error: {err}")
+            return None

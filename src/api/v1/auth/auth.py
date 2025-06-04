@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
+from fastapi import APIRouter, Request, status, Form, UploadFile, File
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
@@ -9,6 +9,8 @@ import logging
 from src.core.config.config import auth_prefix
 from src.core.dependencies.auth_injection import GET_AUTH_SERVICE, GET_CURRENT_USER
 from src.api.v1.utils.render import render_login_form, render_register_form, render_profile_form
+from src.utils.file_uploader import handle_photo_upload
+from src.core.services.database.orm.user_orm import update_profile_file
 
 
 logger = logging.getLogger(__name__)
@@ -116,12 +118,13 @@ async def handle_register(
 
 @router.get('/logout')
 async def logout(
-    auth_service: GET_AUTH_SERVICE
+    auth_service: GET_AUTH_SERVICE,
+    request:Request
 ):
     response = RedirectResponse(url=auth_prefix + "/login", status_code=status.HTTP_303_SEE_OTHER)
     
     try:
-        response = await auth_service.logout_user(response=response)
+        response = await auth_service.logout_user(request=request, response=response)
 
     except Exception as e:
         logger.debug(f"Unexpected error: {e}")
@@ -129,7 +132,27 @@ async def logout(
     return response
 
 @router.get('/profile')
-async def profile(request:Request, curr_user:GET_CURRENT_USER):
+async def profile(request: Request, curr_user: GET_CURRENT_USER):
     if curr_user:
         return await render_profile_form(request, curr_user)
-    #return HTTPException(detail='Unauthorized', status_code=status.HTTP_401_UNAUTHORIZED)
+
+@router.post('/profile')
+async def update_profile(
+    request: Request,
+    db:GET_AUTH_SERVICE,
+    curr_user: GET_CURRENT_USER,
+    username: str = Form(...),
+    email: str = Form(...),
+    bio: str = Form(...),
+    photo: UploadFile = File(None)
+):
+    if not curr_user:
+        return RedirectResponse('/login', status_code=303)
+    
+    if photo:
+        # Handle file upload (you'll need to implement this)
+        photo_url = await handle_photo_upload(photo, curr_user)
+        
+    await update_profile_file(db.session, curr_user, {'username':username, 'email':email, 'bio':bio, 'photo':photo_url})
+    
+    return RedirectResponse(f'{auth_prefix}/profile', status_code=303)

@@ -3,6 +3,7 @@ from fastapi import Request
 from src.utils.prepared_response import prepare_template
 from src.core.config.config import templates
 from src.core.services.database.models.users import UserModel
+from src.core.config.config import default_picture_none
 
 
 async def render_login_form(
@@ -52,23 +53,19 @@ async def render_register_form(
     response = templates.TemplateResponse('users/register.html', template_response_body_data)
     return response
 
-async def render_profile_form(
-    request: Request,
-    user:UserModel
-):
+async def render_profile_form(request: Request, user: UserModel):
     prepared_data = {
-        "title":"Profile",
-        }
+        "title": "Profile"
+    }
     
     add_data = {
-            "request":request,
-            "user":user
-        }
+        "request": request,
+        "user": user,
+    }
     
     template_response_body_data = await prepare_template(
         data=prepared_data,
         additional_data=add_data
-        )
+    )
 
-    response = templates.TemplateResponse('users/profile.html', template_response_body_data)
-    return response
+    return templates.TemplateResponse('users/profile.html', template_response_body_data)

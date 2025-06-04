@@ -1,6 +1,6 @@
 LOG_CONFIG = {
     "version": 1,
-    "disable_existing_loggers": False,  # Important! Prevents FastAPI/Uvicorn from overriding
+    "disable_existing_loggers": False,
     "formatters": {
         "default": {
             "()": "logging.Formatter",
@@ -16,7 +16,13 @@ LOG_CONFIG = {
         },
     },
     "loggers": {
-        # Apply to all loggers (including Uvicorn)
+        # Silence h11_impl logs (especially Chrome DevTools noise)
+        "h11_impl": {
+            "handlers": ["console"],
+            "level": "WARNING",  # or "ERROR" to hide completely
+            "propagate": False,
+        },
+        # Default configuration for all other loggers
         "": {
             "handlers": ["console"],
             "level": "DEBUG",

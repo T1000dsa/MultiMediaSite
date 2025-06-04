@@ -3,7 +3,7 @@ from typing import Any, Dict
 from datetime import timedelta
 
 
-EXPIRE_TIME:timedelta = timedelta(minutes=30)
+EXPIRE_TIME:timedelta = timedelta(minutes=1)
 SESSION_TOKEN:str = 'session_token'
 
 class AuthException(HTTPException):

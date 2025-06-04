@@ -9,6 +9,7 @@ menu_items = [
     {'title':'Login','url':f'{prefix}/login'},
     {'title':'Logout','url':f'{prefix}/logout'},
     {'title':'Profile','url':f'{prefix}/profile'},
+    
 ]
 
 def get_menu():

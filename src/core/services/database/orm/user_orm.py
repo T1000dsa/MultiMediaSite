@@ -116,3 +116,19 @@ async def user_activate(session:AsyncSession, user_id:int, activate:bool) -> Opt
         logger.error(f'Error deleting user: {e}')
         await session.rollback()
         raise e
+    
+async def update_profile_file(session:AsyncSession, user:UserModel, data_dict:dict) -> None:
+    logger.debug(f"{data_dict=}")
+    try:
+        user.email = data_dict.get('email')
+        user.bio = data_dict.get('bio')
+        user.username = data_dict.get('username')
+        user.photo = data_dict.get('photo')
+
+        await session.commit()
+        await session.refresh(user)
+
+    except Exception as e:
+        logger.error(f'Error deleting user: {e}')
+        await session.rollback()
+        raise e
